@@ -1,5 +1,23 @@
 version: '3'
 services:
+  dispatcher:
+    build: .
+    command: python3 main.py
+    volumes:
+      - ./:/usr/src/app
+    depends_on:
+      - worker
+      - redis
+    env_file:
+      - .env
   worker:
     build: .
-    command: tail -f /dev/null
+    command: celery worker -A app:app --pid= -E -Ofair -P gevent -l info --autoscale=30,10 --prefetch-multiplier 5 --statedb=/root/.worker.db
+    volumes:
+      - ./:/usr/src/app
+    env_file:
+      - .env
+  redis:
+    image: redis:6-alpine
+    ports:
+      - 6379
